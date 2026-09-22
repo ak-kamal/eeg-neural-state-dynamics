@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ============================================
+# Project-specific local files
+# ============================================
+
+# Research dataset - NEVER commit
+data/
+
+# Local secrets
+.env.*
