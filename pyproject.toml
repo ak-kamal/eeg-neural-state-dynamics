@@ -35,3 +35,4 @@ packages = ["src/eeg_state"]
 markers = [
     "slow: marks tests that require fitting ICA or other expensive operations",
 ]
+addopts = "-m 'not slow'"
