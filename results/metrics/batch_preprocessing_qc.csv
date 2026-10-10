@@ -1,0 +1,9 @@
+subject,status,error,n_channels,n_bad_channels,bad_channel_names,rank_after_reference,n_ica_components,n_excluded_components,n_trials,n_trials_with_response,accuracy_overall,rt_median_s,duration_s,sfreq_hz,p95_amplitude_uv
+sub-04,ok,,63,0,,62,62,20,197,197,0.8071,1.058,1196.55,250.0,11.522
+sub-05,ok,,63,0,,62,62,24,200,200,0.77,0.758,1156.84,250.0,12.977
+sub-10,ok,,63,0,,62,62,25,200,200,0.815,0.745,1139.15,250.0,9.548
+sub-11,ok,,63,0,,62,62,20,200,200,0.835,0.917,1333.24,250.0,10.645
+sub-17,ok,,63,4,Fp1|Fz|Cz|Fp2,58,58,20,200,200,0.76,0.792,1130.75,250.0,7.507
+sub-24,ok,,63,0,,62,62,18,200,200,0.75,0.972,1220.84,250.0,10.276
+sub-34,ok,,63,1,AF8,61,61,20,200,200,0.87,1.058,1182.0,250.0,7.82
+sub-45,ok,,63,2,Fp2|AF8,60,60,28,200,200,0.83,1.071,1374.44,250.0,10.789

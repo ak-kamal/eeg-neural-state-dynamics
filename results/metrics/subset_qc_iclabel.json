@@ -1,0 +1,62 @@
+{
+  "sub-04": {
+    "n_components": 62,
+    "counts": {
+      "eye blink": 5,
+      "other": 7,
+      "muscle artifact": 26,
+      "brain": 17,
+      "line noise": 5,
+      "channel noise": 2
+    },
+    "percentages": {
+      "eye blink": 8.064516129032258,
+      "other": 11.290322580645162,
+      "muscle artifact": 41.935483870967744,
+      "brain": 27.419354838709676,
+      "line noise": 8.064516129032258,
+      "channel noise": 3.225806451612903
+    },
+    "n_excluded": 20
+  },
+  "sub-05": {
+    "n_components": 62,
+    "counts": {
+      "eye blink": 3,
+      "channel noise": 8,
+      "other": 21,
+      "line noise": 1,
+      "muscle artifact": 18,
+      "brain": 11
+    },
+    "percentages": {
+      "eye blink": 4.838709677419355,
+      "channel noise": 12.903225806451612,
+      "other": 33.87096774193548,
+      "line noise": 1.6129032258064515,
+      "muscle artifact": 29.032258064516128,
+      "brain": 17.741935483870968
+    },
+    "n_excluded": 24
+  },
+  "sub-10": {
+    "n_components": 62,
+    "counts": {
+      "eye blink": 4,
+      "brain": 15,
+      "muscle artifact": 19,
+      "other": 15,
+      "channel noise": 7,
+      "line noise": 2
+    },
+    "percentages": {
+      "eye blink": 6.451612903225806,
+      "brain": 24.193548387096776,
+      "muscle artifact": 30.64516129032258,
+      "other": 24.193548387096776,
+      "channel noise": 11.290322580645162,
+      "line noise": 3.225806451612903
+    },
+    "n_excluded": 25
+  }
+}
