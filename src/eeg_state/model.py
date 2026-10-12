@@ -23,7 +23,7 @@ Key references:
 from __future__ import annotations
 
 import numpy as np
-import mne
+import pandas as pd
 from hmmlearn import hmm
 from sklearn.decomposition import PCA
 
