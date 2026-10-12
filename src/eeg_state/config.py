@@ -53,10 +53,25 @@ NOTCH_HARMONIC_HZ: float | None = 100.0   # second harmonic, visible in PSD
 # Bad channel detection: robust z-score on broadband variance.
 BAD_CHANNEL_Z_THRESHOLD = 4.0
 
-# ICLabel: reject a component if the probability of any of the non-brain
-# classes (eye, muscle, heart, line_noise, channel_noise) >= this threshold.
-# OPEN, will be validated visually on the dev subset.
-ICLABEL_REJECT_PROB = 0.8
+# Category-specific ICLabel rejection thresholds. A component is excluded
+# when the predicted probability of its ICLabel category exceeds the
+# threshold for that category. This follows the per-class design of the
+# original ICLabel paper (Pion-Tonachini et al. 2019, NeuroImage) and
+# Miyakoshi's EEGLAB pipeline: stereotyped artifact categories (eye,
+# heart, line noise, channel noise) are rejected aggressively; muscle is
+# moderately rejected; the "other" category, which absorbs ambiguous
+# components, is rejected only when the classifier is very confident;
+# brain components are never rejected.
+ICLABEL_REJECT_PROBS = {
+    "brain": 1.1,
+    "eye blink": 0.5,
+    "muscle artifact": 0.7,
+    "heart beat": 0.5,
+    "line noise": 0.5,
+    "channel noise": 0.5,
+    "other": 0.9,
+}
+
 # ICA: 99% explained variance, Picard with extended=True. Picard is a fast
 # equivalent to extended Infomax (Ablin et al. 2018, IEEE TSP); extended mode
 # handles sub- and super-Gaussian sources, which is appropriate for EEG

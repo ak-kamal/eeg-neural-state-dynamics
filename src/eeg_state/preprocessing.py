@@ -146,18 +146,26 @@ def fit_ica(ica_copy: mne.io.BaseRaw) -> ICA:
 def classify_ica_components(
     ica: ICA,
     ica_copy: mne.io.BaseRaw,
-    reject_prob: float = config.ICLABEL_REJECT_PROB,
+    reject_probs: dict[str, float] | None = None,
 ) -> tuple[dict[str, Any], list[int]]:
-    """Run ICLabel and return (labels_dict, list_of_component_indices_to_exclude).
+    """Run ICLabel and return (labels_dict, component indices to exclude).
 
-    A component is excluded when its predicted class is not 'brain' AND the
-    predicted probability of that non-brain class is >= `reject_prob`.
+    Category-specific thresholds are used. A component is excluded when
+    its predicted ICLabel class is not "brain" and the classifier's
+    probability for that class exceeds the threshold for that class.
+    Thresholds default to ``config.ICLABEL_REJECT_PROBS``.
     """
+    if reject_probs is None:
+        reject_probs = config.ICLABEL_REJECT_PROBS
+
     labels = label_components(ica_copy, ica, method="iclabel")
-    exclude = [
-        i for i, lab in enumerate(labels["labels"])
-        if lab != "brain" and labels["y_pred_proba"][i] >= reject_prob
-    ]
+
+    exclude = []
+    for i, lab in enumerate(labels["labels"]):
+        threshold = reject_probs.get(lab, 1.1)  # unknown category -> keep
+        if labels["y_pred_proba"][i] >= threshold:
+            exclude.append(i)
+
     return labels, exclude
 
 
