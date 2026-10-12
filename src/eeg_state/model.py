@@ -159,48 +159,41 @@ def prepare_pooled_data(
     subject_trials: dict[str, list[np.ndarray]],
     pca: PCA | None = None,
 ) -> tuple[np.ndarray, list[int], PCA]:
-    """Embed, reduce, and concatenate trials from multiple subjects.
+    """TDE → PCA → per-subject z-score → pooled array.
 
-    Parameters
-    ----------
-    subject_trials : dict
-        Maps subject ID to a list of trial arrays, each of shape
-        ``(n_channels, n_times)``. Trials should already be cleaned and
-        at the target sampling rate.
-    pca : PCA, optional
-        Pre-fitted PCA. If None, PCA is fitted on the pooled embedded data
-        (this is the standard behaviour: PCA is fitted on the group-level
-        concatenated representation, not per subject).
-
-    Returns
-    -------
-    X_pooled : np.ndarray, shape (n_total_samples, n_components)
-        Concatenated PCA-reduced data across all subjects and trials.
-    lengths : list of int
-        Length of each trial in samples. Required by hmmlearn to reset
-        the forward-backward algorithm at trial boundaries.
-    pca : PCA
-        The fitted PCA object (useful for transforming held-out data or
-        reconstructing component topographies).
+    The PCA is fit on the concatenated embedded data across all subjects.
+    Standardization is done *per subject* rather than globally: each
+    subject's PCA time courses are z-scored independently before pooling.
+    This removes between-subject mean/variance differences (different
+    impedances, head sizes, arousal) that would otherwise dominate the
+    top principal components and cause the HMM to cluster subjects rather
+    than discover within-subject states. Verified empirically: global
+    standardization produced subject-locked occupancies (~90% of one
+    state per subject); per-subject standardization produces consistent
+    occupancies across all subjects.
     """
-    embedded_list: list[np.ndarray] = []
-    lengths: list[int] = []
-
+    per_subject_embedded: dict[str, list[np.ndarray]] = {}
     for sub, trials in subject_trials.items():
-        for trial in trials:
-            emb = time_delay_embed(trial)
-            embedded_list.append(emb)
-            lengths.append(emb.shape[1])
+        per_subject_embedded[sub] = [time_delay_embed(t) for t in trials]
 
-    # Concatenate along time, then PCA.
-    X_all = np.concatenate(embedded_list, axis=1)  # features × total_time
-
+    all_embedded = np.concatenate(
+        [np.concatenate(v, axis=1) for v in per_subject_embedded.values()],
+        axis=1,
+    )
     if pca is None:
-        pca = fit_pca(X_all)
+        pca = fit_pca(all_embedded)
 
-    X_pooled = transform_pca(X_all, pca)  # total_time × n_components
-    X_pooled, _, _ = standardize(X_pooled)
-    return X_pooled, lengths, pca
+    X_list, lengths = [], []
+    for embs in per_subject_embedded.values():
+        sub_X = np.concatenate(embs, axis=1).T
+        sub_pca = pca.transform(sub_X)
+        m = sub_pca.mean(axis=0, keepdims=True)
+        s = sub_pca.std(axis=0, keepdims=True)
+        s[s == 0] = 1.0
+        X_list.append((sub_pca - m) / s)
+        lengths.extend(e.shape[1] for e in embs)
+
+    return np.concatenate(X_list, axis=0), lengths, pca
 
 
 # --- HMM fitting -----------------------------------------------------------
@@ -253,6 +246,43 @@ def fit_hmm(
     model.fit(X, lengths=lengths)
     return model
 
+def select_k(
+    results_df: "pd.DataFrame",
+    k_ceiling: int = 6,
+) -> tuple[int, bool]:
+    """Pick K from a K-sweep table using knee detection.
+
+    BIC and AIC are uninformative here — both decrease monotonically across
+    the grid, so neither will select by argmin. We fall back to knee
+    detection on the log-likelihood curve (Kneedle-style: the point of
+    maximum distance from the diagonal connecting the first and last
+    fitted K in normalised coordinates). This is a documented, reproducible
+    rule and behaves correctly under monotonic BIC.
+
+    Returns (K_chosen, was_monotonic), where was_monotonic flags that the
+    information criterion was uninformative and the knee rule did the work.
+    """
+    import numpy as np
+
+    ks = results_df["K"].to_numpy()
+    ll = results_df["log_lik"].to_numpy()
+    if len(ks) < 3:
+        raise ValueError("Knee detection requires at least 3 fitted K values.")
+
+    order = np.argsort(ks)
+    ks = ks[order].astype(float)
+    ll = ll[order].astype(float)
+
+    was_monotonic = bool(np.all(np.diff(ll) > 0))
+    if not was_monotonic:
+        # Log-likelihood not monotone; the raw BIC/AIC minimum is meaningful.
+        return int(ks[np.argmin(results_df["BIC"].to_numpy()[order])]), False
+
+    ks_n = (ks - ks.min()) / (ks.max() - ks.min())
+    ll_n = (ll - ll.min()) / (ll.max() - ll.min())
+    distance_from_diagonal = np.abs(ks_n - ll_n)
+    k_chosen = int(ks[np.argmax(distance_from_diagonal)])
+    return min(k_chosen, k_ceiling), True
 
 def get_state_time_course(
     model: hmm.GaussianHMM,

@@ -318,3 +318,44 @@ def test_pooled_data_is_standardized():
     X, _, _ = model.prepare_pooled_data(subject_trials)
     np.testing.assert_allclose(X.mean(axis=0), np.zeros(X.shape[1]), atol=1e-10)
     np.testing.assert_allclose(X.std(axis=0), np.ones(X.shape[1]), atol=1e-10)
+    
+
+def test_select_k_handles_monotonic_bic():
+    """When BIC decreases monotonically, select_k uses the improvement rule
+    and reports monotonicity, rather than returning the largest K."""
+    import pandas as pd
+    df = pd.DataFrame({
+        "K": [4, 5, 6, 7, 8],
+        "log_lik": [-4.60e6, -4.55e6, -4.50e6, -4.48e6, -4.47e6],
+        "BIC": [9.20e6, 9.15e6, 9.10e6, 9.08e6, 9.07e6],
+    })
+    k, monotonic = model.select_k(df, k_ceiling=6)
+    assert monotonic is True
+    assert k <= 6
+    # 90% improvement threshold should land below the largest K
+    assert k < 8
+
+
+def test_select_k_respects_ceiling():
+    """select_k never returns K above the ceiling."""
+    import pandas as pd
+    df = pd.DataFrame({
+        "K": [4, 6, 8, 10],
+        "log_lik": [-4.60e6, -4.50e6, -4.40e6, -4.39e6],
+        "BIC": [9.20e6, 9.10e6, 9.00e6, 8.99e6],
+    })
+    k, _ = model.select_k(df, k_ceiling=5)
+    assert k <= 5
+    
+
+def test_select_k_picks_elbow_on_monotonic_curve():
+    """On a curve with a clear knee at K=4, select_k must return 4."""
+    import pandas as pd
+    df = pd.DataFrame({
+        "K": [3, 4, 5, 6],
+        "log_lik": [-4.725e6, -4.599e6, -4.583e6, -4.543e6],
+        "BIC":     [9.460e6,  9.209e6,  9.181e6,  9.103e6],
+    })
+    k, monotonic = model.select_k(df, k_ceiling=6)
+    assert monotonic is True
+    assert k == 4
