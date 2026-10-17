@@ -1,4 +1,4 @@
-# Latent Neural-State Dynamics in High-Density EEG During Working Memory
+# Unsupervised Discovery of Latent Neural States in High-Density EEG During a Sternberg Working-Memory Task
 
 An investigation of how the brain moves between recurring electrophysiological
 states during a Sternberg working-memory task, using unsupervised TDE-HMM
@@ -152,7 +152,7 @@ identified as channel noise by ICLabel and excluded downstream. See
 
 ## Repository Structure
 
-*(To be filled at end, mirroring Project 2.)*
+*(To be filled at end)*
 
 ## What This Project Does Not Claim
 
