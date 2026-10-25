@@ -83,8 +83,8 @@ ICA_FIT_PARAMS = {"extended": True, "ortho": False}
 ICA_LOWPASS_HZ = 100.0   # ICA copy band; see docs/decisions.md
 
 # --- Model representation --------------------------------------------------
-# Time-delay embedding: +/-7 samples at 250 Hz = ~56 ms window.
-TDE_LAGS = list(range(-7, 8))
+# Time-delay embedding: +/-25 samples at 250 Hz = ~200 ms window (Vidaurre 2016; Quinn 2018; Rossi 2023 all use 100–250 ms windows)
+TDE_LAGS = list(range(-25, 26))
 
 # PCA dimensionality retained before HMM fitting. OPEN.
 N_PCS = 20

@@ -108,8 +108,7 @@ def test_pooled_lengths_match_tde_trimming():
     subject_trials = {"sub-A": [rng.standard_normal((3, n_times))]}
     _, lengths, _ = model.prepare_pooled_data(subject_trials)
     expected = n_times - max(config.TDE_LAGS) - (-min(config.TDE_LAGS))
-    # For lags spanning -7..7, expected = 100 - 14 = 86
-    assert lengths[0] == 86
+    assert lengths[0] == expected
 
 
 def test_pooled_pca_is_reused_when_provided():

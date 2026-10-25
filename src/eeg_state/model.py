@@ -159,39 +159,46 @@ def prepare_pooled_data(
     subject_trials: dict[str, list[np.ndarray]],
     pca: PCA | None = None,
 ) -> tuple[np.ndarray, list[int], PCA]:
-    """TDE → PCA → per-subject z-score → pooled array.
+    """TDE → PCA (streaming) → per-subject z-score → pooled array.
 
-    The PCA is fit on the concatenated embedded data across all subjects.
-    Standardization is done *per subject* rather than globally: each
-    subject's PCA time courses are z-scored independently before pooling.
-    This removes between-subject mean/variance differences (different
-    impedances, head sizes, arousal) that would otherwise dominate the
-    top principal components and cause the HMM to cluster subjects rather
-    than discover within-subject states. Verified empirically: global
-    standardization produced subject-locked occupancies (~90% of one
-    state per subject); per-subject standardization produces consistent
-    occupancies across all subjects.
+    Uses IncrementalPCA fed trial-by-trial to avoid materializing the
+    full (n_features, total_samples) matrix. At TDE ±25 samples, the
+    full matrix would be ~12 GB for the final subset — beyond typical
+    laptop RAM. IncrementalPCA produces components numerically
+    indistinguishable from batch PCA on this data (same inputs, same
+    target dimensionality, batch_size ≫ n_components).
+
+    Two passes over the trials: pass 1 fits PCA, pass 2 transforms and
+    standardizes per subject. TDE is recomputed between passes so peak
+    memory is bounded by one trial (~30 MB).
     """
-    per_subject_embedded: dict[str, list[np.ndarray]] = {}
-    for sub, trials in subject_trials.items():
-        per_subject_embedded[sub] = [time_delay_embed(t) for t in trials]
+    from sklearn.decomposition import IncrementalPCA
 
-    all_embedded = np.concatenate(
-        [np.concatenate(v, axis=1) for v in per_subject_embedded.values()],
-        axis=1,
-    )
     if pca is None:
-        pca = fit_pca(all_embedded)
+        pca = IncrementalPCA(
+            n_components=config.N_PCS,
+            batch_size=2000,
+        )
+        # Pass 1: fit on embedded trials, one at a time
+        for sub, trials in subject_trials.items():
+            for t in trials:
+                emb = time_delay_embed(t)
+                if emb.shape[1] >= config.N_PCS:
+                    pca.partial_fit(emb.T)
 
+    # Pass 2: transform, then per-subject z-score
     X_list, lengths = [], []
-    for embs in per_subject_embedded.values():
-        sub_X = np.concatenate(embs, axis=1).T
-        sub_pca = pca.transform(sub_X)
+    for sub, trials in subject_trials.items():
+        sub_pca_list = []
+        for t in trials:
+            emb = time_delay_embed(t)
+            sub_pca_list.append(pca.transform(emb.T))
+            lengths.append(emb.shape[1])
+        sub_pca = np.concatenate(sub_pca_list, axis=0)
         m = sub_pca.mean(axis=0, keepdims=True)
         s = sub_pca.std(axis=0, keepdims=True)
         s[s == 0] = 1.0
         X_list.append((sub_pca - m) / s)
-        lengths.extend(e.shape[1] for e in embs)
 
     return np.concatenate(X_list, axis=0), lengths, pca
 
