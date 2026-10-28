@@ -363,28 +363,30 @@ The learned HMM parameters (means, covariances, transition matrices) were
 unaffected by the bug, since the fit itself never used per-trial posterior
 slicing.
 
+
 ## Repository Structure
 
+```text
 ├── src/eeg_state/
-│ ├── config.py central parameters
-│ ├── io.py BIDS loading, event parsing, trial reconstruction
-│ ├── preprocessing.py bad-channel detection, ICA, ICLabel, filtering
-│ └── model.py TDE, PCA, HMM, decode, K selection
+│   ├── config.py          # Central parameters
+│   ├── io.py              # BIDS loading, events, trial reconstruction
+│   ├── preprocessing.py   # Bad channels, ICA, ICLabel, filtering
+│   └── model.py           # TDE, PCA, HMM, decoding, K selection
 ├── notebooks/
-│ ├── 01_dataset_audit.ipynb
-│ ├── 02_preprocessing_qc.ipynb
-│ ├── 03_state_discovery.ipynb
-│ └── 04_state_characterization.ipynb
-├── tests/ unit tests for io, preprocessing, model
-├── scripts/ batch preprocess, subset QC
+│   ├── 01_dataset_audit.ipynb
+│   ├── 02_preprocessing_qc.ipynb
+│   ├── 03_state_discovery.ipynb
+│   └── 04_state_characterization.ipynb
+├── tests/                 # Unit tests
+├── scripts/               # Batch preprocessing and QC
 ├── results/
-│ ├── metrics/ QC tables, K sweep JSON
-│ ├── models/ fitted K=2 pickle
-│ └── figures/ README figures
+│   ├── metrics/           # QC tables and K sweep results
+│   ├── models/            # Fitted K=2 model
+│   └── figures/           # README figures
 ├── pyproject.toml
 ├── uv.lock
 └── README.md
-
+```
 
 ## What This Project Does Not Claim
 
